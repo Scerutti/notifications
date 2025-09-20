@@ -10,7 +10,7 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 
 # Instalo dependencias (sin dev si no las necesitas en prod)
-RUN npm install --omit=dev
+RUN npm install
 
 # Copio el resto del código
 COPY . .
