@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Query } from '@nestjs/common';
 import { NotificationsService } from '../application/notifications.service';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 
@@ -15,7 +15,10 @@ export class NotificationsController {
 
   @Post()
   @ApiOperation({ summary: 'Crear una notificación (email + telegram)' })
-  create(@Body() dto: CreateNotificationDto) {
-    return this.notificationsService.createNotification(dto);
+  create(
+    @Body() dto: CreateNotificationDto,
+    @Query("owner") owner: string
+  ) {
+    return this.notificationsService.createNotification(dto, owner);
   }
 }

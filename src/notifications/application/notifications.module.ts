@@ -5,9 +5,13 @@ import { NotificationsController } from '../presentation/notifications.controlle
 import { Notification, NotificationSchema } from '../domain/notification.schema';
 import { MailerService } from '../infrastructure/mailer.service';
 import { TelegramService } from '../infrastructure/telegram.service';
+import { NotificationConfigModule } from '../../notification-config/notification-config.module';
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: Notification.name, schema: NotificationSchema }])],
+  imports: [
+    MongooseModule.forFeature([{ name: Notification.name, schema: NotificationSchema }]),
+    NotificationConfigModule
+  ],
   controllers: [NotificationsController],
   providers: [NotificationsService, MailerService, TelegramService],
 })
