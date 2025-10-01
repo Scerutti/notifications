@@ -1,10 +1,21 @@
 version: "3.9"
+
 services:
   notifications-service:
     image: scerutti/notifications-service:latest
     build: .
+    container_name: notifications-service
     ports:
       - "8080:8080"
     env_file:
       - .env
     restart: unless-stopped
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7
+    container_name: notifications-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
