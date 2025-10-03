@@ -31,26 +31,34 @@ GET http://localhost:8080/notifications?limit=10&offset=0
 ### Obtener estadísticas
 GET http://localhost:8080/notifications/stats
 
+### Probar conexión con Telegram (diagnóstico)
+GET http://localhost:8080/notifications/test-telegram
+
 ### Obtener una notificación específica (reemplaza :id con un ID real)
 GET http://localhost:8080/notifications/64a1b2c3d4e5f6789012345
 
-### Crear configuración de notificación
-POST http://localhost:8080/notification-config
+### Crear configuración de notificación (simplificada - sin credenciales)
+POST http://localhost:8080/config/notifications
 Content-Type: application/json
 
 {
   "email": "test@example.com",
   "channels": ["email", "telegram"],
-  "credentials": {
-    "email": {
-      "resendKey": "re_your_resend_key",
-      "to": "admin@example.com",
-      "from": "noreply@yourdomain.com"
-    },
-    "telegram": {
-      "token": "your_telegram_bot_token",
-      "chatId": "your_telegram_chat_id"
-    }
-  }
+  "enabled": true
 }
+
+### Obtener configuración por email
+GET http://localhost:8080/config/notifications/by-email?email=softsys95@gmail.com
+
+### Actualizar configuración por ID (reemplaza :id con el ID real de tu configuración)
+PUT http://localhost:8080/config/notifications/68d833034b21be5fdea63c19
+Content-Type: application/json
+
+{
+  "channels": ["email", "telegram"],
+  "enabled": true
+}
+
+### Obtener configuración por ID
+GET http://localhost:8080/config/notifications/68d833034b21be5fdea63c19
 

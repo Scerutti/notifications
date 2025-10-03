@@ -6,11 +6,11 @@ export class NotificationConfig extends Document {
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop({ type: [String], default: [] })
+  @Prop({ type: [String], default: ['email'] })
   channels: string[];
 
-  @Prop({ type: Object, default: {} })
-  credentials: Record<string, any>;
+  @Prop({ default: true })
+  enabled: boolean;
 }
 
 export const NotificationConfigSchema = SchemaFactory.createForClass(NotificationConfig);

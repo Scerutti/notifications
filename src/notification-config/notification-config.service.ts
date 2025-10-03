@@ -23,9 +23,21 @@ export class NotificationConfigService {
     return config;
   }
 
+  async updateConfigById(id: string, dto: UpdateNotificationConfigDto): Promise<NotificationConfig> {
+    const config = await this.configModel.findByIdAndUpdate(id, dto, { new: true });
+    if (!config) throw new NotFoundException(`Config not found for id: ${id}`);
+    return config;
+  }
+
   async getConfigByEmail(email: string): Promise<NotificationConfig> {
     const config = await this.configModel.findOne({ email });
     if (!config) throw new NotFoundException(`Config not found for email: ${email}`);
+    return config;
+  }
+
+  async getConfigById(id: string): Promise<NotificationConfig> {
+    const config = await this.configModel.findById(id);
+    if (!config) throw new NotFoundException(`Config not found for id: ${id}`);
     return config;
   }
 }

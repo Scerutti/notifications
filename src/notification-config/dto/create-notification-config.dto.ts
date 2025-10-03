@@ -1,4 +1,4 @@
-import { IsArray, IsEmail, IsObject, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsOptional, IsString } from 'class-validator';
 
 export class CreateNotificationConfigDto {
   @IsEmail()
@@ -8,7 +8,7 @@ export class CreateNotificationConfigDto {
   @IsString({ each: true })
   channels: string[];
 
-  @IsObject()
+  @IsBoolean()
   @IsOptional()
-  credentials?: Record<string, any>;
+  enabled?: boolean;
 }
