@@ -5,11 +5,12 @@ import { Model } from 'mongoose';
 import { Queue } from 'bullmq';
 import { 
   Notification, 
-  NotificationStatus, 
-  NotificationChannel 
+  NotificationStatus,
 } from '../domain/notification.schema';
 import { CreateNotificationDto } from '../dto/create-notification.dto';
 import { NotificationConfigService } from '../../notification-config/notification-config.service';
+import { TelegramService } from '../infrastructure/telegram.service';
+import {toString} from "funciones-basicas"
 
 @Injectable()
 export class NotificationsService {
@@ -20,43 +21,37 @@ export class NotificationsService {
     private readonly notificationModel: Model<Notification>,
     @InjectQueue('notifications')
     private readonly notificationsQueue: Queue,
-    private readonly configService: NotificationConfigService
+    private readonly configService: NotificationConfigService,
+    private readonly telegramService: TelegramService
   ) {}
 
   async createNotification(dto: CreateNotificationDto, owner: string): Promise<Notification> {
+    // Obtener configuración del owner primero
+    const config = await this.configService.getConfigByEmail(owner);
+    if (!config) {
+      throw new Error(`No hay configuración de notificación para el owner: ${owner}`);
+    }
+
     // Crear notificación en estado PENDING
     const notification = new this.notificationModel({
       ...dto,
       status: NotificationStatus.PENDING,
-      channels: dto.channels ?? [NotificationChannel.EMAIL],
+      channels: config.channels,
       retryCount: 0,
       metadata: dto.metadata ?? {}
     });
 
     await notification.save();
-    this.logger.log(`📝 Notificación creada con ID: ${notification._id.toString()} en estado PENDING`);
-
-    // Obtener configuración del owner
-    const config = await this.configService.getConfigByEmail(owner);
-    if (!config) {
-      notification.status = NotificationStatus.FAILED;
-      notification.errorMessage = `No hay configuración de notificación para el owner: ${owner}`;
-      await notification.save();
-      this.logger.error(`❌ ${notification.errorMessage}`);
-      return notification;
-    }
+    this.logger.log(`📝 Notificación creada con ID: ${toString(notification._id)} en estado PENDING`);
 
     // Encolar job para procesamiento asíncrono
     await this.notificationsQueue.add(
       'process-notification',
       {
-        notificationId: notification._id.toString(),
+        notificationId: toString(notification._id),
         owner,
         channels: notification.channels,
-        config: {
-          email: config.credentials?.email,
-          telegram: config.credentials?.telegram
-        }
+        // Ya no pasamos config, usaremos process.env directamente en el processor
       },
       {
         attempts: 3,
@@ -69,7 +64,7 @@ export class NotificationsService {
       }
     );
 
-    this.logger.log(`🚀 Notificación ${notification._id.toString()} encolada para procesamiento`);
+    this.logger.log(`🚀 Notificación ${toString(notification._id)} encolada para procesamiento`);
     return notification;
   }
 
@@ -149,5 +144,53 @@ export class NotificationsService {
       },
       successRate: total > 0 ? ((sent / total) * 100).toFixed(2) : '0'
     };
+  }
+
+  async testTelegramConnection() {
+    try {
+      this.logger.log('🧪 Iniciando prueba de conexión con Telegram...');
+      
+      // Verificar variables de entorno
+      const token = process.env.TELEGRAM_BOT_TOKEN;
+      const chatId = process.env.TELEGRAM_CHAT_ID;
+      
+      this.logger.log(`🔍 Token configurado: ${token ? '✅ Sí' : '❌ No'}`);
+      this.logger.log(`🔍 Chat ID configurado: ${chatId ? '✅ Sí' : '❌ No'}`);
+      
+      if (!token || !chatId) {
+        return {
+          success: false,
+          error: 'Variables de entorno TELEGRAM_BOT_TOKEN o TELEGRAM_CHAT_ID no configuradas',
+          tokenConfigured: !!token,
+          chatIdConfigured: !!chatId
+        };
+      }
+
+      // Obtener información del bot
+      const botInfo = await this.telegramService.getBotInfo();
+      this.logger.log(`🤖 Bot info: ${JSON.stringify(botInfo)}`);
+
+      // Enviar mensaje de prueba
+      await this.telegramService.sendMessage({
+        name: 'Sistema de Notificaciones',
+        email: 'test@example.com',
+        message: '🧪 Mensaje de prueba - Conexión exitosa con Telegram'
+      });
+
+      return {
+        success: true,
+        message: 'Conexión con Telegram exitosa',
+        botInfo: botInfo,
+        timestamp: new Date().toISOString()
+      };
+
+    } catch (error) {
+      this.logger.error(`❌ Error en prueba de Telegram: ${error.message}`);
+      return {
+        success: false,
+        error: error.message,
+        timestamp: new Date().toISOString()
+      };
+    }
   }
 }

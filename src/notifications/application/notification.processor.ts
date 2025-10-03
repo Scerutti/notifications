@@ -11,10 +11,6 @@ export interface NotificationJobData {
   notificationId: string;
   owner: string;
   channels: string[];
-  config: {
-    email?: any;
-    telegram?: any;
-  };
 }
 
 @Processor('notifications')
@@ -31,9 +27,10 @@ export class NotificationProcessor extends WorkerHost {
   }
 
   async process(job: Job<NotificationJobData>): Promise<void> {
-    const { notificationId, channels, config } = job.data;
+    const { notificationId, channels } = job.data;
     
     this.logger.log(`🔄 Procesando notificación ${notificationId} - Job ID: ${job.id}`);
+    this.logger.log(`📋 Canales configurados: ${channels.join(', ')}`);
     
     try {
       // Obtener la notificación de la base de datos
@@ -44,9 +41,12 @@ export class NotificationProcessor extends WorkerHost {
 
       this.logger.log(`📨 Enviando notificación a ${notification.email} por canales: ${channels.join(', ')}`);
 
+      // Verificar variables de entorno antes de procesar
+      this.logEnvironmentVariables();
+
       // Procesar cada canal
       for (const channel of channels) {
-        await this.processChannel(notification, channel, config);
+        await this.processChannel(notification, channel);
       }
 
       // Marcar como enviada
@@ -66,36 +66,46 @@ export class NotificationProcessor extends WorkerHost {
     }
   }
 
-  private async processChannel(notification: Notification, channel: string, config: any): Promise<void> {
+  private async processChannel(notification: Notification, channel: string): Promise<void> {
     switch (channel) {
       case 'email':
+        this.logger.log(`📧 Procesando email para ${notification.email}`);
         await this.mailerService.sendMail(
           {
             name: notification.name,
             email: notification.email,
             message: notification.message
-          },
-          config.email
+          }
+          // Ya no pasamos credentials, el servicio usa process.env directamente
         );
-        this.logger.log(`📧 Email enviado a ${notification.email}`);
+        this.logger.log(`✅ Email enviado exitosamente a ${notification.email}`);
         break;
 
       case 'telegram':
+        this.logger.log(`📱 Procesando Telegram para ${notification.name}`);
         await this.telegramService.sendMessage(
           {
             name: notification.name,
             email: notification.email,
             message: notification.message
-          },
-          config.telegram
+          }
+          // Ya no pasamos credentials, el servicio usa process.env directamente
         );
-        this.logger.log(`📱 Mensaje de Telegram enviado a ${notification.name}`);
+        this.logger.log(`✅ Mensaje de Telegram enviado exitosamente a ${notification.name}`);
         break;
 
       default:
         this.logger.warn(`⚠️ Canal desconocido: ${channel}`);
         throw new Error(`Canal de notificación no soportado: ${channel}`);
     }
+  }
+
+  private logEnvironmentVariables(): void {
+    this.logger.log(`🔍 Verificando variables de entorno:`);
+    this.logger.log(`   - RESEND_KEY: ${process.env.RESEND_KEY ? '✅ Configurada' : '❌ No configurada'}`);
+    this.logger.log(`   - MAIL_TO: ${process.env.MAIL_TO ? '✅ Configurada' : '❌ No configurada'}`);
+    this.logger.log(`   - TELEGRAM_BOT_TOKEN: ${process.env.TELEGRAM_BOT_TOKEN ? '✅ Configurada' : '❌ No configurada'}`);
+    this.logger.log(`   - TELEGRAM_CHAT_ID: ${process.env.TELEGRAM_CHAT_ID ? '✅ Configurada' : '❌ No configurada'}`);
   }
 
   private async updateNotificationWithError(notificationId: string, errorMessage: string): Promise<void> {

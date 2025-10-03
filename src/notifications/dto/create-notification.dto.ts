@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsString, IsNotEmpty, IsOptional, IsArray, IsEnum } from 'class-validator';
-import { NotificationChannel } from '../domain/notification.schema';
 
 export class CreateNotificationDto {
   @ApiProperty({ description: 'Nombre del destinatario', example: 'Juan Pérez' })
@@ -17,17 +16,6 @@ export class CreateNotificationDto {
   @IsNotEmpty()
   message: string;
 
-  @ApiProperty({ 
-    description: 'Canales por los que enviar la notificación', 
-    enum: NotificationChannel,
-    isArray: true,
-    example: ['email', 'telegram'],
-    required: false 
-  })
-  @IsOptional()
-  @IsArray()
-  @IsEnum(NotificationChannel, { each: true })
-  channels?: NotificationChannel[];
 
   @ApiProperty({ 
     description: 'Metadatos adicionales', 
