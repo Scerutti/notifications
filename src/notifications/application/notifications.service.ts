@@ -5,8 +5,7 @@ import { Model } from 'mongoose';
 import { Queue } from 'bullmq';
 import { 
   Notification, 
-  NotificationStatus, 
-  NotificationChannel 
+  NotificationStatus,
 } from '../domain/notification.schema';
 import { CreateNotificationDto } from '../dto/create-notification.dto';
 import { NotificationConfigService } from '../../notification-config/notification-config.service';
