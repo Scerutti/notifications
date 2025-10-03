@@ -1,7 +1,7 @@
 {
   "name": "notifications",
-  "version": "1.0.0",
-  "description": "Micro backend de notificaciones (Mail + Telegram) con NestJS, Fastify y SWC",
+  "version": "2.0.0",
+  "description": "Enterprise notification microservice with DDD architecture, supporting Email & Telegram channels with async processing via BullMQ",
   "author": "Sebastián Cerutti",
   "license": "MIT",
   "scripts": {
